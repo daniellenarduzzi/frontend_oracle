@@ -40,7 +40,8 @@ class App extends Component {
       from: "",
       block: 8807362,
       moreInfo: "",
-      modal: false
+      modal: false,
+      MetaMaskConnected: false
     }
   }
 
@@ -62,7 +63,6 @@ class App extends Component {
   async componentDidMount(){
     this.getAccounts()
     this.getCurrencys()
-    this.checkCurrencyUpdate()
     this.socket()
   }
 
@@ -70,10 +70,13 @@ class App extends Component {
   
     var from = await web3.eth.getAccounts()
     if(from.length === 0){
-      console.log("Accounts not found or MetaMask probably unlocked")
+      this.setState({
+        MetaMaskConnected: false
+      })
     }
     else{
       this.setState({
+        MetaMaskConnected: true,
         from: from[0]
       })
     }
@@ -107,6 +110,18 @@ class App extends Component {
       topics: [[this.state.signatureOfRequest, this.state.signatureOfUpdate]]
     })
     if(res.length !== 0){
+      console.log(res);
+      let coso = await web3.eth.getPastLogs({
+          fromBlock: this.state.block,
+          toBlock: 'latest',
+          address: this.state.address,  
+          topics: [
+            [this.state.signatureOfRequest, this.state.signatureOfUpdate]
+          ]
+        })
+      console.log(this.state.address, this.state.signatureOfRequest, this.state.signatureOfUpdate, coso);
+      
+      this.checkCurrencyUpdate(res.reverse())
       var table = res.reverse().slice(0, 10)
 
       for(var x = 0; x < table.length; x++){
@@ -129,12 +144,7 @@ class App extends Component {
 
   }
 
-  checkCurrencyUpdate = async() => {
-    let res = await this.state.instance.getPastEvents('AllEvents', {
-      fromBlock: this.state.block,
-      toBlock: 'latest',
-      topics: [[this.state.signatureOfUpdate]]
-    })
+  checkCurrencyUpdate = async(res) => {
     if(res.length !== 0){
       var table = res.reverse()
       var difference = 0
@@ -175,7 +185,7 @@ class App extends Component {
         datos.event = "updateCurrencyEvent"
         var currencyIdToUpdate = web3.utils.hexToNumber(datos.data)
         this.updateCurrency(currencyIdToUpdate)
-        this.checkCurrencyUpdate()
+        this.checkCurrencyUpdate([datos])
       }
       
       datos.returnValues = {}
@@ -208,7 +218,7 @@ class App extends Component {
       to: _to,
       value: web3.utils.toWei(_amount || 0, "ether"),
       gasPrice: 1000000000,
-      gas: _gas || 21000,
+      gas: _gas || null,
       data: _data || null
     }, (error, txHash) => {
       if(error){
@@ -235,7 +245,7 @@ class App extends Component {
     
     this.createTransaction(this.state.from, 
     this.state.address, 
-    amount, data, 50000, function(error, hash){
+    amount, data, null, function(error, hash){
       if(error){
         console.log("Todo mal")
       } else {
