@@ -131,7 +131,7 @@ class App extends Component {
         pastEvents: resTable,
         ready: true
       })
-      console.log(this.state.pastEvents);
+      console.log("past",this.state.pastEvents);
       
     }else{
       this.setState({
