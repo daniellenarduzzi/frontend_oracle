@@ -111,7 +111,7 @@ class App extends Component {
     })
     if(res.length !== 0){
       console.log(res);
-      let coso = await web3.eth.getPastLogs({
+      /*let coso = await web3.eth.getPastLogs({
           fromBlock: this.state.block,
           toBlock: 'latest',
           address: this.state.address,  
@@ -119,7 +119,7 @@ class App extends Component {
             [this.state.signatureOfRequest, this.state.signatureOfUpdate]
           ]
         })
-      console.log(this.state.address, this.state.signatureOfRequest, this.state.signatureOfUpdate, coso);
+      console.log(this.state.address, this.state.signatureOfRequest, this.state.signatureOfUpdate, coso);*/
       
       this.checkCurrencyUpdate(res.reverse())
       var table = res.reverse().slice(0, 10)
