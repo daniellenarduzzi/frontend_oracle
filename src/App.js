@@ -114,25 +114,23 @@ class App extends Component {
     })
     var resTable = []
     if(res.length !== 0){
-      this.checkCurrencyUpdate(res.reverse())
+      this.checkCurrencyUpdate(res)
       var table = res.reverse().slice(0, 10)
       for(var x = 0; x < table.length; x++){
         var timestamp = (await web3.eth.getBlock(table[x].blockNumber)).timestamp
         let currencyId = web3.utils.hexToNumber(table[x].data)
         resTable[x] = {}
-        resTable[x].event = table[x].topics[0] === this.state.signatureOfRequest ? "Update request" : "Update successful"
+        resTable[x].event = table[x].topics[0] === this.state.signatureOfRequest ? "Update request" : "Update successfully"
         resTable[x].date = timestamp
         resTable[x].hash = table[x].transactionHash
         resTable[x].currency = this.state.currencys[currencyId][0]
+        resTable[x].block = table[x].blockNumber
       }
-      console.log(resTable);
       
       this.setState({
         pastEvents: resTable,
         ready: true
-      })
-      console.log("past",this.state.pastEvents);
-      
+      })      
     }else{
       this.setState({
         ready: true
@@ -153,10 +151,7 @@ class App extends Component {
         difference = (now - timeStamp)/60
         if(difference < 3){
           var disabled = this.state.currencys
-          console.log(disabled)
           var currencyId = web3.utils.hexToNumber(table[x].data)
-          console.log(currencyId)
-          console.log(disabled[currencyId].disabled)
           disabled[currencyId].disabled = true
           disabled[currencyId].difference = difference
 
@@ -175,23 +170,26 @@ class App extends Component {
       topics: [[this.state.signatureOfRequest, this.state.signatureOfUpdate]]
     })
     .on('data', (datos) => {
-           
+      var object = {}
+
       if (datos.topics[0] === this.state.signatureOfRequest) {
-        datos.event = "requestCurrencyUpdateEvent"
+        object.event = "Update request"
       } else {
-        datos.event = "updateCurrencyEvent"
+        object.event = "Update successfully"
         var currencyIdToUpdate = web3.utils.hexToNumber(datos.data)
         this.updateCurrency(currencyIdToUpdate)
         this.checkCurrencyUpdate([datos])
       }
-      
-      datos.returnValues = {}
+
+      object.block = datos.blockNumber
+      object.hash = datos.transactionHash
+
       var currencyId = [...datos, web3.utils.hexToNumber(datos.data)]
-      datos.returnValues.id = this.state.currencys[currencyId][0]
+      object.currency = this.state.currencys[currencyId][0]
       
       var table = this.state.pastEvents
 
-      table.unshift(datos)
+      table.unshift(object)
       table = table.slice(0, 10)
       
       this.setState({
@@ -229,7 +227,6 @@ class App extends Component {
   }
 
   async requestUpdate(props){
-    console.log(props)
     var amount = (await this.state.instance.methods.updateFee().call() / 1000000000000000000).toString()
     var data = this.state.instance.methods.requestCurrencyUpdate(props).encodeABI()
     this.state.instance.methods.requestCurrencyUpdate(props).estimateGas()
@@ -322,9 +319,9 @@ class App extends Component {
                         <td>{dato.event} </td>
                         
                         {(() => {
-                          if (dato.timeStamp) {
+                          if (dato.date) {
                             return (
-                              <td>{moment(dato.timeStamp*1000).format("HH:mm:ss MMMM/YYYY")}</td>
+                              <td>{moment(dato.date*1000).format("HH:mm:ss MMMM/YYYY")}</td>
                             )
                           } else {
                             return (
@@ -333,9 +330,9 @@ class App extends Component {
                           }
                         })()}
 
-                        <td><a target='_blank' href={`https://kovan.etherscan.io/tx/${dato.transactionHash}`} >{dato.transactionHash}</a> </td>
-                        <td>{dato.returnValues.id.toUpperCase()} </td>
-                        <td><Button onClick={() => this.moreInfo(dato.blockNumber)}>Mas Información</Button></td>
+                        <td><a target='_blank' href={`https://kovan.etherscan.io/tx/${dato.hash}`} >{dato.hash}</a> </td>
+                        <td>{dato.currency.toUpperCase()} </td>
+                        <td><Button onClick={() => this.moreInfo(dato.block)}>Mas Información</Button></td>
                       </tr>
                     )
                   })}
