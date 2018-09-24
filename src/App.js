@@ -104,38 +104,35 @@ class App extends Component {
   }
 
   getTable = async() => {
-    let res = await this.state.instance.getPastEvents('AllEvents', {
+    let res = await web3.eth.getPastLogs({
       fromBlock: this.state.block,
       toBlock: 'latest',
-      topics: [[this.state.signatureOfRequest, this.state.signatureOfUpdate]]
+      address: this.state.address,
+      topics: [
+        [this.state.signatureOfRequest, this.state.signatureOfUpdate]
+      ]
     })
+    var resTable = []
     if(res.length !== 0){
-      console.log(res);
-      /*let coso = await web3.eth.getPastLogs({
-          fromBlock: this.state.block,
-          toBlock: 'latest',
-          address: this.state.address,  
-          topics: [
-            [this.state.signatureOfRequest, this.state.signatureOfUpdate]
-          ]
-        })
-      console.log(this.state.address, this.state.signatureOfRequest, this.state.signatureOfUpdate, coso);*/
-      
       this.checkCurrencyUpdate(res.reverse())
       var table = res.reverse().slice(0, 10)
-
       for(var x = 0; x < table.length; x++){
-        var timeStamp = await web3.eth.getBlock(table[x].blockNumber)
-        let index = table[x].returnValues.id[0]
-        
-        table[x].timeStamp = [...table[x], timeStamp.timestamp]
-        table[x].returnValues.id = this.state.currencys[index][0]
+        var timestamp = (await web3.eth.getBlock(table[x].blockNumber)).timestamp
+        let currencyId = web3.utils.hexToNumber(table[x].data)
+        resTable[x] = {}
+        resTable[x].event = table[x].topics[0] === this.state.signatureOfRequest ? "Update request" : "Update successful"
+        resTable[x].date = timestamp
+        resTable[x].hash = table[x].transactionHash
+        resTable[x].currency = this.state.currencys[currencyId][0]
       }
-
+      console.log(resTable);
+      
       this.setState({
-        pastEvents: table,
+        pastEvents: resTable,
         ready: true
       })
+      console.log(this.state.pastEvents);
+      
     }else{
       this.setState({
         ready: true
@@ -152,16 +149,16 @@ class App extends Component {
       var now = Date.now()/1000
 
       while(difference < 3 && x < table.length){
-        var timeStamp = await web3.eth.getBlock(table[x].blockNumber)
-        difference = (now - timeStamp.timestamp)/60
+        var timeStamp = (await web3.eth.getBlock(table[x].blockNumber)).timestamp
+        difference = (now - timeStamp)/60
         if(difference < 3){
           var disabled = this.state.currencys
           console.log(disabled)
-          var index = table[x].returnValues.id
-          console.log(index)
-          console.log(disabled[index].disabled)
-          disabled[index].disabled = true
-          disabled[index].difference = difference
+          var currencyId = web3.utils.hexToNumber(table[x].data)
+          console.log(currencyId)
+          console.log(disabled[currencyId].disabled)
+          disabled[currencyId].disabled = true
+          disabled[currencyId].difference = difference
 
           this.setState({
             currencys: disabled
