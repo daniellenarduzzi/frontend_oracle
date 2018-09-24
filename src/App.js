@@ -201,7 +201,7 @@ class App extends Component {
     })
   }
 
-  createTransaction(_from, _to, _amount, _data, _gas, cb) {
+  createTransaction(_from, _to, _amount, _data, cb) {
 
     if(_to === undefined)
       console.log("Missing Parameters");
@@ -213,7 +213,7 @@ class App extends Component {
       to: _to,
       value: web3.utils.toWei(_amount || 0, "ether"),
       gasPrice: 1000000000,
-      gas: _gas || null,
+      gas: null,
       data: _data || null
     }, (error, txHash) => {
       if(error){
@@ -229,22 +229,13 @@ class App extends Component {
   async requestUpdate(props){
     var amount = (await this.state.instance.methods.updateFee().call() / 1000000000000000000).toString()
     var data = this.state.instance.methods.requestCurrencyUpdate(props).encodeABI()
-    this.state.instance.methods.requestCurrencyUpdate(props).estimateGas()
-    .then(function(gasAmount){
-      console.log(gasAmount);
-    })
-    .catch(function(error){
-      console.log(error); 
-    });
-    
-    this.createTransaction(this.state.from, 
-    this.state.address, 
-    amount, data, null, function(error, hash){
-      if(error){
-        console.log("Todo mal")
-      } else {
-        console.log(hash)
-      }
+    this.createTransaction(this.state.from, this.state.address, amount, data,
+      function(error, hash){
+        if(error){
+          console.log("Todo mal")
+        } else {
+          console.log(hash)
+        }
     })  
   }
 
@@ -326,9 +317,9 @@ class App extends Component {
                           } else {
                             return (
                               <td>Pendiente...</td>
+                            })()}
                             )
                           }
-                        })()}
 
                         <td><a target='_blank' href={`https://kovan.etherscan.io/tx/${dato.hash}`} >{dato.hash}</a> </td>
                         <td>{dato.currency.toUpperCase()} </td>
