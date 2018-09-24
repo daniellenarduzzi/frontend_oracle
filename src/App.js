@@ -266,7 +266,6 @@ class App extends Component {
       moreInfo: moreInfo,
       modal: true
     })
-    console.log(moreInfo)
   }
 
   render() {
@@ -382,17 +381,22 @@ class App extends Component {
 
       <Modal isOpen={this.state.modal} toggle={this.toggle} className={this.props.className}>
           
-        <ModalBody>
+      <ModalBody>
         <Table hover bordered striped responsive>
             <thead>
             <tr>
-              <th>Fecha</th>
+              <th>Gas usado</th>
               <th>Número de Bloque</th>
-              <th>Prueba de Integridad</th>
-              <th>Más Información</th>
+              <th>Miner</th>
             </tr>
             </thead>
             <tbody>
+
+              <tr>
+                <td>{this.state.moreInfo.gasUsed}</td>
+                <td>{this.state.moreInfo.number}</td>
+                <td>{this.state.moreInfo.miner}</td>
+              </tr>
             
             </tbody>
           </Table>
